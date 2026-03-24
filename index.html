@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scene Partner — Hear Your Screenplay Come Alive</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#080808;
+  --surface:#111;
+  --border:#222;
+  --accent:#e8c97a;
+  --accent2:#c4a052;
+  --text:#f0ece4;
+  --muted:#666;
+  --red:#e05252;
+  --green:#5cb87a;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;overflow-x:hidden;}
+
+/* GRAIN OVERLAY */
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");pointer-events:none;z-index:1000;opacity:0.4;}
+
+/* NAV */
+nav{display:flex;justify-content:space-between;align-items:center;padding:1.5rem 4rem;border-bottom:1px solid var(--border);position:sticky;top:0;background:rgba(8,8,8,0.92);backdrop-filter:blur(12px);z-index:100;}
+.nav-logo{font-family:'Playfair Display',serif;font-size:1.2rem;color:var(--accent);letter-spacing:-0.01em;}
+.nav-logo span{font-style:italic;}
+.nav-links{display:flex;align-items:center;gap:2rem;}
+.nav-links a{color:var(--muted);text-decoration:none;font-size:0.85rem;transition:color 0.2s;}
+.nav-links a:hover{color:var(--text);}
+.nav-cta{background:var(--accent);color:#080808;padding:0.5rem 1.2rem;border-radius:6px;text-decoration:none;font-size:0.85rem;font-weight:500;transition:all 0.2s;}
+.nav-cta:hover{background:var(--accent2);transform:translateY(-1px);}
+
+/* HERO */
+.hero{min-height:92vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:4rem 2rem;position:relative;}
+.hero-eyebrow{font-size:0.72rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--accent2);margin-bottom:1.5rem;display:flex;align-items:center;gap:0.6rem;}
+.hero-eyebrow::before,.hero-eyebrow::after{content:'';height:1px;width:40px;background:var(--accent2);opacity:0.5;}
+.hero h1{font-family:'Playfair Display',serif;font-size:clamp(3rem,7vw,6.5rem);line-height:1.05;max-width:900px;margin-bottom:1.5rem;letter-spacing:-0.02em;}
+.hero h1 em{font-style:italic;color:var(--accent);}
+.hero-sub{font-size:1.05rem;color:var(--muted);max-width:520px;line-height:1.8;margin-bottom:3rem;font-weight:300;}
+.hero-btns{display:flex;gap:1rem;flex-wrap:wrap;justify-content:center;}
+.btn-hero{background:var(--accent);color:#080808;padding:0.9rem 2.2rem;border-radius:8px;text-decoration:none;font-size:0.95rem;font-weight:500;transition:all 0.2s;border:none;cursor:pointer;}
+.btn-hero:hover{background:var(--accent2);transform:translateY(-2px);}
+.btn-ghost{background:transparent;color:var(--text);padding:0.9rem 2.2rem;border-radius:8px;text-decoration:none;font-size:0.95rem;border:1px solid var(--border);transition:all 0.2s;}
+.btn-ghost:hover{border-color:var(--accent);color:var(--accent);}
+.hero-note{font-size:0.75rem;color:var(--muted);margin-top:1.2rem;}
+.hero-note strong{color:var(--accent);}
+
+/* DECORATIVE FILM STRIP */
+.film-strip{width:100%;overflow:hidden;padding:2rem 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);background:var(--surface);position:relative;}
+.film-strip-inner{display:flex;gap:3rem;animation:scroll 20s linear infinite;white-space:nowrap;}
+.film-strip-inner span{font-size:0.72rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);flex-shrink:0;}
+.film-strip-inner span.accent{color:var(--accent);}
+@keyframes scroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+
+/* VIDEO PLACEHOLDER */
+.video-section{padding:5rem 4rem;display:flex;flex-direction:column;align-items:center;}
+.video-wrap{width:100%;max-width:860px;aspect-ratio:16/9;background:var(--surface);border-radius:12px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;}
+.video-wrap::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(232,201,122,0.05) 0%,transparent 70%);}
+.video-placeholder{text-align:center;color:var(--muted);}
+.video-play-icon{width:64px;height:64px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:1.5rem;transition:all 0.2s;cursor:pointer;}
+.video-play-icon:hover{border-color:var(--accent);color:var(--accent);}
+.video-placeholder p{font-size:0.82rem;}
+.video-placeholder strong{color:var(--accent);}
+.section-label{font-size:0.68rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--accent2);margin-bottom:1rem;}
+.section-title{font-family:'Playfair Display',serif;font-size:clamp(1.8rem,4vw,3rem);margin-bottom:1rem;text-align:center;}
+.section-sub{font-size:0.95rem;color:var(--muted);max-width:480px;text-align:center;line-height:1.7;margin-bottom:3rem;}
+
+/* HOW IT WORKS */
+.how{padding:5rem 4rem;border-top:1px solid var(--border);}
+.how-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1px;background:var(--border);border:1px solid var(--border);border-radius:12px;overflow:hidden;max-width:960px;margin:0 auto;}
+.how-step{background:var(--bg);padding:2.5rem 2rem;}
+.step-num{font-family:'Playfair Display',serif;font-size:2.5rem;color:var(--border);margin-bottom:1rem;line-height:1;}
+.step-title{font-size:0.95rem;font-weight:500;margin-bottom:0.5rem;}
+.step-desc{font-size:0.82rem;color:var(--muted);line-height:1.7;}
+.step-desc strong{color:var(--accent2);}
+
+/* FEATURES */
+.features{padding:5rem 4rem;border-top:1px solid var(--border);display:flex;flex-direction:column;align-items:center;}
+.features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.5rem;max-width:960px;width:100%;}
+.feature-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.75rem;transition:border-color 0.2s;}
+.feature-card:hover{border-color:var(--accent2);}
+.feature-icon{font-size:1.5rem;margin-bottom:1rem;}
+.feature-title{font-size:0.95rem;font-weight:500;margin-bottom:0.4rem;}
+.feature-desc{font-size:0.82rem;color:var(--muted);line-height:1.7;}
+.feature-badge{display:inline-block;font-size:0.62rem;background:rgba(232,201,122,0.1);color:var(--accent);border:1px solid rgba(232,201,122,0.2);border-radius:4px;padding:0.1rem 0.4rem;margin-top:0.5rem;letter-spacing:0.05em;text-transform:uppercase;}
+
+/* FORMATS */
+.formats{padding:5rem 4rem;border-top:1px solid var(--border);display:flex;flex-direction:column;align-items:center;}
+.formats-row{display:flex;gap:1rem;flex-wrap:wrap;justify-content:center;max-width:700px;}
+.format-pill{border:1px solid var(--border);border-radius:8px;padding:0.85rem 1.5rem;text-align:center;min-width:140px;}
+.format-pill.best{border-color:var(--accent2);background:rgba(232,201,122,0.04);}
+.format-pill-name{font-size:0.9rem;font-weight:500;margin-bottom:0.2rem;}
+.format-pill-note{font-size:0.7rem;color:var(--muted);}
+.format-pill.best .format-pill-note{color:var(--green);}
+
+/* PRICING */
+.pricing{padding:5rem 4rem;border-top:1px solid var(--border);display:flex;flex-direction:column;align-items:center;}
+.pricing-note{font-size:0.82rem;color:var(--muted);margin-top:1rem;text-align:center;}
+.pricing-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;max-width:760px;width:100%;margin-bottom:1.5rem;}
+.price-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.5rem;text-align:center;transition:all 0.2s;}
+.price-card:hover{border-color:var(--accent2);}
+.price-card.featured{border-color:var(--accent);}
+.price-tag{font-size:0.68rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:0.5rem;}
+.price-val{font-family:'Playfair Display',serif;font-size:2rem;color:var(--accent);margin-bottom:0.25rem;}
+.price-pages{font-size:0.78rem;color:var(--muted);margin-bottom:1rem;}
+.price-desc{font-size:0.75rem;color:var(--muted);line-height:1.5;}
+.price-free{background:transparent;border:1px solid var(--border);border-radius:12px;padding:1rem 2rem;text-align:center;font-size:0.85rem;color:var(--muted);max-width:400px;margin:0 auto;}
+.price-free strong{color:var(--text);}
+
+/* LANGS */
+.langs{padding:3rem 4rem;border-top:1px solid var(--border);display:flex;justify-content:center;gap:2rem;flex-wrap:wrap;}
+.lang-pill{display:flex;align-items:center;gap:0.5rem;font-size:0.82rem;color:var(--muted);}
+.lang-pill span{font-size:1.1rem;}
+
+/* CTA FINAL */
+.cta-final{padding:6rem 4rem;border-top:1px solid var(--border);text-align:center;}
+.cta-final h2{font-family:'Playfair Display',serif;font-size:clamp(2rem,5vw,4rem);margin-bottom:1rem;}
+.cta-final h2 em{font-style:italic;color:var(--accent);}
+.cta-final p{font-size:0.95rem;color:var(--muted);margin-bottom:2.5rem;line-height:1.7;}
+
+/* FOOTER */
+footer{padding:2rem 4rem;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;}
+footer p{font-size:0.75rem;color:var(--muted);}
+.footer-logo{font-family:'Playfair Display',serif;font-size:0.9rem;color:var(--accent);}
+
+/* ANIMATIONS */
+.fade-in{opacity:0;transform:translateY(20px);animation:fadeIn 0.7s ease forwards;}
+@keyframes fadeIn{to{opacity:1;transform:translateY(0);}}
+.fade-in:nth-child(1){animation-delay:0.1s;}
+.fade-in:nth-child(2){animation-delay:0.2s;}
+.fade-in:nth-child(3){animation-delay:0.3s;}
+.fade-in:nth-child(4){animation-delay:0.4s;}
+
+@media(max-width:768px){
+  nav{padding:1rem 1.5rem;}
+  .nav-links{display:none;}
+  .hero{padding:3rem 1.5rem;}
+  .how,.features,.formats,.pricing,.video-section,.cta-final{padding:3rem 1.5rem;}
+  .langs{padding:2rem 1.5rem;gap:1rem;}
+  footer{padding:1.5rem;}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">Scene <em>Partner</em></div>
+  <div class="nav-links">
+    <a href="#how">How it works</a>
+    <a href="#features">Features</a>
+    <a href="#pricing">Pricing</a>
+    <a href="app.html" class="nav-cta">Try free →</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-eyebrow">For screenwriters and actors</div>
+  <h1 class="fade-in">Hear your screenplay <em>come alive</em></h1>
+  <p class="hero-sub fade-in">Upload your script, assign a unique voice to each character, and listen. Catch flat dialogue, rhythm issues and pacing problems before anyone else does.</p>
+  <div class="hero-btns fade-in">
+    <a href="app.html" class="btn-hero">Try free — 5 pages</a>
+    <a href="#how" class="btn-ghost">See how it works</a>
+  </div>
+  <p class="hero-note fade-in">No subscription. Pay once per script. <strong>Free to start.</strong></p>
+</section>
+
+<!-- FILM STRIP -->
+<div class="film-strip">
+  <div class="film-strip-inner">
+    <span class="accent">Scene Partner</span><span>Colega de Cena</span><span>🎬</span>
+    <span>Hear your script</span><span class="accent">Actor Mode</span><span>Character voices</span><span>🎭</span>
+    <span>Final Draft FDX</span><span class="accent">Multi-language</span><span>No subscription</span><span>🎙</span>
+    <span class="accent">Scene Partner</span><span>Colega de Cena</span><span>🎬</span>
+    <span>Hear your script</span><span class="accent">Actor Mode</span><span>Character voices</span><span>🎭</span>
+    <span>Final Draft FDX</span><span class="accent">Multi-language</span><span>No subscription</span><span>🎙</span>
+  </div>
+</div>
+
+<!-- VIDEO -->
+<section class="video-section" id="video">
+  <div class="section-label">In action</div>
+  <h2 class="section-title">See it in action</h2>
+  <p class="section-sub">Watch how Scene Partner reads your screenplay with different voices for each character.</p>
+  <div class="video-wrap" id="video-wrap">
+    <div class="video-placeholder">
+      <div class="video-play-icon">▶</div>
+      <p>Video coming soon</p>
+      <p style="margin-top:0.4rem;"><strong>Try the app directly →</strong></p>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how" id="how">
+  <div style="text-align:center;margin-bottom:3rem;">
+    <div class="section-label">Simple by design</div>
+    <h2 class="section-title">How it works</h2>
+  </div>
+  <div class="how-grid">
+    <div class="how-step">
+      <div class="step-num">01</div>
+      <div class="step-title">Upload your script</div>
+      <div class="step-desc">Import a <strong>Final Draft FDX</strong> file for perfect results, or paste your scene text directly. PDF also supported with manual review.</div>
+    </div>
+    <div class="how-step">
+      <div class="step-num">02</div>
+      <div class="step-title">Cast the voices</div>
+      <div class="step-desc">Characters are detected automatically. Assign a profile to each: <strong>adult man, young woman, elderly, child</strong> — and the app picks the right voice.</div>
+    </div>
+    <div class="how-step">
+      <div class="step-num">03</div>
+      <div class="step-title">Listen and refine</div>
+      <div class="step-desc">Press play. Hear the full cast read your script. Control <strong>speed, reading mode</strong> and jump between scenes freely.</div>
+    </div>
+    <div class="how-step">
+      <div class="step-num">04</div>
+      <div class="step-title">Actor mode</div>
+      <div class="step-desc">Choose your character. The app reads all other parts and <strong>pauses for your lines</strong> — perfect for rehearsing and memorizing dialogue.</div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="features" id="features">
+  <div class="section-label">What you get</div>
+  <h2 class="section-title">Everything a writer needs to hear</h2>
+  <p class="section-sub">Built by a screenwriter, for screenwriters and actors.</p>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">🎭</div>
+      <div class="feature-title">Unique voice per character</div>
+      <div class="feature-desc">Every character gets their own distinct voice. Assign profiles like "elderly man" or "young woman" and the app handles the rest.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">⭐</div>
+      <div class="feature-title">Native Final Draft support</div>
+      <div class="feature-desc">Upload your .fdx file and the script loads perfectly — no formatting errors, no guessing. 100% faithful to your original.</div>
+      <span class="feature-badge">Best quality</span>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🎤</div>
+      <div class="feature-title">Actor rehearsal mode</div>
+      <div class="feature-desc">Pick your character and read along. The app voices everyone else and pauses when it's your turn, so you can practice your lines.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🌍</div>
+      <div class="feature-title">Multi-language</div>
+      <div class="feature-desc">Portuguese, English, Spanish, French, German. Read your script in any language, with appropriate voices for each.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">✏️</div>
+      <div class="feature-title">Review before reading</div>
+      <div class="feature-desc">For PDF and pasted text: review every detected line before playing. Fix types, edit text, add or delete lines — full control.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🔒</div>
+      <div class="feature-title">Private by design</div>
+      <div class="feature-desc">Everything runs in your browser. Your screenplay is never uploaded to any server — it stays on your device.</div>
+    </div>
+  </div>
+</section>
+
+<!-- FORMATS -->
+<section class="formats" id="formats">
+  <div class="section-label">File formats</div>
+  <h2 class="section-title">Works with your workflow</h2>
+  <p class="section-sub">Use whatever format you already have. FDX gives the best results.</p>
+  <div class="formats-row">
+    <div class="format-pill best">
+      <div class="format-pill-name">⭐ FDX</div>
+      <div class="format-pill-note">Perfect — no review needed</div>
+    </div>
+    <div class="format-pill best">
+      <div class="format-pill-name">⭐ Fountain</div>
+      <div class="format-pill-note">Perfect — no review needed</div>
+    </div>
+    <div class="format-pill">
+      <div class="format-pill-name">PDF</div>
+      <div class="format-pill-note">Good — manual review</div>
+    </div>
+    <div class="format-pill">
+      <div class="format-pill-name">Paste text</div>
+      <div class="format-pill-note">Good — manual review</div>
+    </div>
+  </div>
+  <p style="font-size:0.78rem;color:var(--muted);margin-top:1.5rem;text-align:center;">In Final Draft: <strong style="color:var(--text);">File → Save As → Final Draft Document (.fdx)</strong></p>
+</section>
+
+<!-- PRICING -->
+<section class="pricing" id="pricing">
+  <div class="section-label">Simple pricing</div>
+  <h2 class="section-title">Pay per script, not per month</h2>
+  <p class="section-sub">No subscriptions. Buy when you need it. Each script is a one-time purchase.</p>
+  <div class="pricing-grid">
+    <div class="price-card">
+      <div class="price-tag">Free</div>
+      <div class="price-val" style="font-size:1.5rem;padding-top:0.25rem;">Free</div>
+      <div class="price-pages">Up to 5 pages</div>
+      <div class="price-desc">Try the app with any script. No card needed.</div>
+    </div>
+    <div class="price-card">
+      <div class="price-tag">Short film</div>
+      <div class="price-val">R$15</div>
+      <div class="price-pages">Up to 24 pages</div>
+      <div class="price-desc">Short films, episodes, one-acts.</div>
+    </div>
+    <div class="price-card featured">
+      <div class="price-tag">Feature ✦</div>
+      <div class="price-val">R$39</div>
+      <div class="price-pages">Up to 90 pages</div>
+      <div class="price-desc">Full feature films and pilots.</div>
+    </div>
+    <div class="price-card">
+      <div class="price-tag">Feature+</div>
+      <div class="price-val">R$59</div>
+      <div class="price-pages">120+ pages</div>
+      <div class="price-desc">Long features, miniseries, stage plays.</div>
+    </div>
+  </div>
+  <div class="price-free">
+    Payments via <strong>Mercado Pago</strong> — credit card, debit, PIX and boleto accepted.
+  </div>
+  <p class="pricing-note">International payments available. Prices shown in BRL.</p>
+</section>
+
+<!-- LANGUAGES -->
+<section style="padding:3rem 4rem;border-top:1px solid var(--border);text-align:center;">
+  <p style="font-size:0.68rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:1.5rem;">Available in</p>
+  <div class="langs" style="padding:0;border:none;">
+    <div class="lang-pill"><span>🇧🇷</span> Português</div>
+    <div class="lang-pill"><span>🇺🇸</span> English</div>
+    <div class="lang-pill"><span>🇪🇸</span> Español</div>
+    <div class="lang-pill"><span>🇫🇷</span> Français</div>
+    <div class="lang-pill"><span>🇩🇪</span> Deutsch</div>
+  </div>
+</section>
+
+<!-- CTA FINAL -->
+<section class="cta-final">
+  <h2>Ready to <em>hear</em> your story?</h2>
+  <p>Start with 5 free pages. No signup required. No credit card.</p>
+  <a href="app.html" class="btn-hero">Open Scene Partner →</a>
+</section>
+
+<footer>
+  <div class="footer-logo">Scene Partner</div>
+  <p>Built for screenwriters, by a screenwriter.</p>
+  <p>© 2025 Scene Partner · <a href="app.html" style="color:var(--muted);text-decoration:none;">Launch app</a></p>
+</footer>
+
+<script>
+// Intersection Observer para animações ao fazer scroll
+var observer=new IntersectionObserver(function(entries){
+  entries.forEach(function(e){
+    if(e.isIntersecting){e.target.style.opacity='1';e.target.style.transform='translateY(0)';e.target.style.transition='opacity 0.6s ease, transform 0.6s ease';}
+  });
+},{threshold:0.1});
+document.querySelectorAll('.how-step,.feature-card,.price-card,.format-pill').forEach(function(el){
+  el.style.opacity='0';el.style.transform='translateY(16px)';
+  observer.observe(el);
+});
+</script>
+</body>
+</html>
