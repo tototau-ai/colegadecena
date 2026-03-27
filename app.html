@@ -476,57 +476,134 @@ function lerFountain(txt,nome){
   aplicarLinhas(res,nome,true);
 }
 
-// ===== PDF =====
+// ===== PDF — PARSER COM MARGENS PADRÃO DA INDÚSTRIA =====
+// Roteiros profissionais usam margens fixas em pontos tipográficos:
+// Ação: margem esquerda ~108pt (1.5")
+// Personagem: ~252pt (3.5") da esquerda
+// Diálogo: ~180pt (2.5") da esquerda
+// Direção(parenthetical): ~216pt (3.0")
+// Cena: ~108pt igual à ação, mas começa com INT./EXT.
+// Transição: ~432pt (6.0") alinhada à direita
 function lerPDF(buf,nome){
   pdfjsLib.getDocument(new Uint8Array(buf)).promise.then(function(pdf){
-    var ps=[];for(var i=1;i<=pdf.numPages;i++)ps.push(i);
-    Promise.all(ps.map(function(n){
-      return pdf.getPage(n).then(function(pg){
-        return pg.getTextContent({normalizeWhitespace:true}).then(function(c){
-          var grupos={};
-          c.items.forEach(function(item){
-            if(!item.str||!item.str.trim())return;
-            var y=Math.round(item.transform[5]);var x=Math.round(item.transform[4]);
-            if(!grupos[y]){grupos[y]={y:y,xMin:999,tokens:[]};}
-            if(x<grupos[y].xMin)grupos[y].xMin=x;
-            grupos[y].tokens.push({x:x,w:item.width||0,str:item.str});
-          });
-          return Object.values(grupos).map(function(g){
-            g.tokens.sort(function(a,b){return a.x-b.x;});
-            var texto='';
-            g.tokens.forEach(function(tk,i){
-              if(i===0){texto=tk.str;}
-              else{var gap=tk.x-(g.tokens[i-1].x+(g.tokens[i-1].w||g.tokens[i-1].str.length*5.5));texto+=(gap>3?' ':'')+tk.str;}
+    // Primeiro passo: detectar a largura real da página para calibrar
+    pdf.getPage(1).then(function(pg1){
+      var vp=pg1.getViewport({scale:1});
+      var largPag=vp.width; // largura em pontos
+
+      var ps=[];for(var i=1;i<=pdf.numPages;i++)ps.push(i);
+      Promise.all(ps.map(function(n){
+        return pdf.getPage(n).then(function(pg){
+          return pg.getTextContent({normalizeWhitespace:true}).then(function(c){
+            var grupos={};
+            c.items.forEach(function(item){
+              if(!item.str||!item.str.trim())return;
+              var y=Math.round(item.transform[5]);
+              var x=item.transform[4]; // mantém precisão decimal para calibragem
+              if(!grupos[y]){grupos[y]={y:y,xMin:9999,tokens:[]};}
+              if(x<grupos[y].xMin)grupos[y].xMin=x;
+              grupos[y].tokens.push({x:x,w:item.width||0,str:item.str});
             });
-            return {y:g.y,x:g.xMin,texto:texto.replace(/  +/g,' ').trim()};
+            return Object.values(grupos).map(function(g){
+              g.tokens.sort(function(a,b){return a.x-b.x;});
+              var texto='';
+              g.tokens.forEach(function(tk,i){
+                if(i===0){texto=tk.str;}
+                else{
+                  var gap=tk.x-(g.tokens[i-1].x+(g.tokens[i-1].w||g.tokens[i-1].str.length*5));
+                  texto+=(gap>3?' ':'')+tk.str;
+                }
+              });
+              return {y:g.y,x:g.xMin,texto:texto.replace(/  +/g,' ').trim()};
+            });
           });
         });
+      })).then(function(pags){
+        var todas=[];pags.forEach(function(p){todas=todas.concat(p);});
+        todas.sort(function(a,b){return b.y-a.y;});
+
+        // Filtra ruídos comuns de PDF
+        todas=todas.filter(function(l){
+          var t=l.texto;
+          if(!t||t.length<2)return false;
+          if(/^\d+\.?$/.test(t))return false; // números de página
+          if(/^(CONT'D|MORE|\(CONT'D\)|\(MORE\))$/i.test(t.trim()))return false;
+          return true;
+        });
+
+        if(!todas.length){abrirPreview([],nome);return;}
+
+        // Detecta margem esquerda base (percentil 5 — onde fica a ação)
+        var xs=todas.map(function(l){return l.x;}).filter(function(x){return x>5;}).sort(function(a,b){return a-b;});
+        var margemAcao=xs[Math.floor(xs.length*0.05)]||72;
+
+        // Calcula a escala: em PDFs padrão Letter (612pt), margem de ação fica ~108pt
+        // Mas o PDF.js pode usar escala diferente, então calculamos o fator
+        var escala=margemAcao/108;
+        if(escala<0.5||escala>3)escala=1; // fallback se muito fora do esperado
+
+        // Thresholds calibrados para o PDF específico
+        var limPersonagem=margemAcao+(144*escala); // ~3.5" = ação + 2"
+        var limDialogo=margemAcao+(72*escala);     // ~2.5" = ação + 1"
+        var limDirecao=margemAcao+(108*escala);    // ~3.0" = ação + 1.5"
+
+        // Classifica cada linha pela posição X calibrada
+        var blocos=[],ba=null,ta=null;
+        todas.forEach(function(linha){
+          var t=linha.texto;
+          var x=linha.x;
+
+          // Primeiro testa conteúdo (mais confiável que posição)
+          var isScene=/^(INT\.|EXT\.|INT\/EXT\.|I\/E\.|EST\.|EXT\/INT\.)/i.test(t);
+          var isDir=/^\(/.test(t)&&/\)/.test(t)&&t.length<80;
+          var isTrans=/^(FADE OUT|FADE IN|CUT TO|DISSOLVE TO|CORTE PARA|SMASH CUT)/i.test(t)||
+                      (/^[A-Z\s:\.]+$/.test(t)&&t.indexOf(':')>-1&&t.length<30&&x>largPag*0.5*escala);
+
+          var sp=t.replace(/\(.*?\)/g,'').trim();
+          var isCharConteudo=sp===sp.toUpperCase()&&
+            /^[A-ZÁÉÍÓÚÀÂÊÎÔÛÃÕÇÑ]/.test(sp)&&
+            sp.length>=2&&sp.length<=50&&
+            sp.split(/\s+/).length<=6&&
+            !/[\.!?,;:]$/.test(sp)&&
+            !/^[\-\.\d\s]+$/.test(sp)&&
+            !/^(FADE|CUT|DISSOLVE|CORTE|IRIS|THE|AND|BUT|FOR|ARE|WAS|HIS|HER|THAT|THIS|WITH|FROM)/.test(sp);
+
+          // Posição X confirma ou nega a detecção de conteúdo
+          var isCharPosicao=x>limPersonagem*0.85; // tolerância de 15%
+          var isDiaPosicao=x>limDialogo*0.7&&x<limPersonagem*1.1;
+
+          var tipo;
+          if(isScene)tipo='scene';
+          else if(isTrans)tipo='transition';
+          else if(isDir)tipo='direction';
+          else if(isCharConteudo&&isCharPosicao)tipo='character';
+          else if(isCharConteudo&&isDiaPosicao&&(ta==='character'||ta==='direction'))tipo='dialogue';
+          else if(isDiaPosicao&&(ta==='character'||ta==='dialogue'||ta==='direction'))tipo='dialogue';
+          else tipo='action';
+
+          // Junta linhas do mesmo bloco (diálogo ou ação quebrado em múltiplas linhas)
+          if(ba&&tipo===ba.tipo&&(tipo==='dialogue'||tipo==='action')&&!isScene){
+            ba.texto+=' '+t;
+          } else {
+            if(ba)blocos.push(ba);
+            ba={texto:t,tipo:tipo};
+          }
+          ta=tipo;
+        });
+        if(ba)blocos.push(ba);
+
+        // Pós-processamento: remove blocos muito curtos que são artefatos
+        blocos=blocos.filter(function(b){
+          if(b.tipo==='character'&&b.texto.length>50)b.tipo='action';
+          return b.texto.trim().length>=2;
+        });
+
+        abrirPreview(blocos,nome);
       });
-    })).then(function(pags){
-      var todas=[];pags.forEach(function(p){todas=todas.concat(p);});
-      todas.sort(function(a,b){return b.y-a.y;});
-      todas=todas.filter(function(l){var t=l.texto;if(!t||t.length<2)return false;if(/^\d+\.?$/.test(t))return false;if(/\.\s*\d+\s*$/.test(t)&&t.length<40&&/^[A-Z]/.test(t))return false;return true;});
-      var xs=todas.map(function(l){return l.x;}).filter(function(x){return x>5;}).sort(function(a,b){return a-b;});
-      var mb=xs[Math.floor(xs.length*0.1)]||0;
-      var inds=todas.map(function(l){return Math.max(0,l.x-mb);}).sort(function(a,b){return a-b;});
-      var med=inds[Math.floor(inds.length/2)]||0;
-      var blocos=[],ba=null,ta=null;
-      todas.forEach(function(linha){
-        var t=linha.texto;var ind=Math.max(0,linha.x-mb);
-        var isScene=/^(INT\.|EXT\.|INT\/EXT\.|I\/E\.)/.test(t);
-        var isDir=/^\(/.test(t)&&/\)$/.test(t);
-        var sp=t.replace(/\(.*?\)/g,'').trim();
-        var isChar=!isScene&&!isDir&&sp===sp.toUpperCase()&&/^[A-ZÁÉÍÓÚÀÂÊÎÔÛÃÕÇ]/.test(sp)&&sp.length>=2&&sp.length<=42&&sp.split(' ').length<=5&&!/[.!?,]$/.test(sp)&&!/^(FADE|CUT|DISSOLVE|CORTE|IRIS|MORE|CONT)/.test(sp);
-        var isDial=!isScene&&!isDir&&!isChar&&ind>med*0.25&&(ta==='character'||ta==='dialogue'||ta==='direction');
-        var tipo=isScene?'scene':isDir?'direction':isChar?'character':isDial?'dialogue':'action';
-        if(ba&&tipo===ba.tipo&&(tipo==='dialogue'||tipo==='action')&&!isScene){ba.texto+=' '+t;}
-        else{if(ba)blocos.push(ba);ba={texto:t,tipo:tipo};}
-        ta=tipo;
-      });
-      if(ba)blocos.push(ba);
-      abrirPreview(blocos,nome);
     });
-  }).catch(function(){document.getElementById('script-view').innerHTML='<div class="empty-state"><h3>Erro ao ler PDF</h3><p>Use FDX para melhor resultado.</p></div>';});
+  }).catch(function(){
+    document.getElementById('script-view').innerHTML='<div class="empty-state"><h3>Erro ao ler PDF</h3><p>Use FDX para o melhor resultado.</p></div>';
+  });
 }
 
 // ===== PARSER GENÉRICO =====
